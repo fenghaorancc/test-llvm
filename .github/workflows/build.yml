@@ -22,12 +22,27 @@ jobs:
           brew install llvm
           echo "LLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm" >> $GITHUB_ENV
 
-      - name: Install LLVM (Windows)
+      - name: Cache LLVM (Windows)
         if: runner.os == 'Windows'
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: C:\llvm-dev
+          key: llvm-18.1.8-windows-x64
+
+      - name: Download LLVM dev package (Windows)
+        if: runner.os == 'Windows' && steps.cache-llvm.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          choco install llvm --yes
-          echo "LLVM_DIR=C:/Program Files/LLVM/lib/cmake/llvm" >> $env:GITHUB_ENV
+          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
+          Invoke-WebRequest -Uri $url -OutFile llvm.tar.xz -UseBasicParsing
+          New-Item -ItemType Directory -Force -Path C:\llvm-dev | Out-Null
+          tar -xf llvm.tar.xz -C C:\llvm-dev --strip-components=1
+
+      - name: Set LLVM_DIR (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: echo "LLVM_DIR=C:/llvm-dev/lib/cmake/llvm" >> $env:GITHUB_ENV
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DLLVM_DIR=${{ env.LLVM_DIR }}"
