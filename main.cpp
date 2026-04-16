@@ -1,6 +1,6 @@
-#include "llvm/Support/raw_ostream.h"
+#include <iostream>
 
 int main() {
-    llvm::outs() << "Hello from LLVM!\n";
+    std::cout << "Hello from LLVM!" << std::endl;
     return 0;
 }

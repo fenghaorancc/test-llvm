@@ -1,0 +1,47 @@
+name: LLVM Windows Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Setup CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install LLVM
+        run: choco install llvm --yes
+
+      - name: Configure and Build
+        shell: pwsh
+        run: |
+          $llvmPrefix = "C:/Program Files/LLVM"
+
+          mkdir build
+          cd build
+
+          cmake -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="$llvmPrefix" `
+            ..
+
+          ninja
+
+      - name: Run
+        run: ./build/test-llvm.exe
