@@ -16,14 +16,26 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install LLVM
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: "18"
+      - name: Install LLVM (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm
 
-      - name: Configure
-        shell: bash
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_DIR="$LLVM_PATH/lib/cmake/llvm"
+      - name: Install LLVM (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = "18.1.8"
+          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$version/LLVM-$version-win64.exe"
+          Invoke-WebRequest -Uri $url -OutFile "LLVM.exe" -UseBasicParsing
+          Start-Process -FilePath "LLVM.exe" -ArgumentList "/S" -Wait
+
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_DIR="$(brew --prefix llvm)/lib/cmake/llvm"
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DLLVM_DIR=C:/Program Files/LLVM/lib/cmake/llvm"
 
       - name: Build
         run: cmake --build build --config Release
