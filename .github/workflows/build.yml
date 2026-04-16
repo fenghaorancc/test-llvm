@@ -18,24 +18,19 @@ jobs:
 
       - name: Install LLVM (macOS)
         if: runner.os == 'macOS'
-        run: brew install llvm
+        run: |
+          brew install llvm
+          echo "LLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm" >> $GITHUB_ENV
 
       - name: Install LLVM (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $version = "18.1.8"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$version/LLVM-$version-win64.exe"
-          Invoke-WebRequest -Uri $url -OutFile "LLVM.exe" -UseBasicParsing
-          Start-Process -FilePath "LLVM.exe" -ArgumentList "/S" -Wait
+          choco install llvm --yes
+          echo "LLVM_DIR=C:/Program Files/LLVM/lib/cmake/llvm" >> $env:GITHUB_ENV
 
-      - name: Configure (macOS)
-        if: runner.os == 'macOS'
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_DIR="$(brew --prefix llvm)/lib/cmake/llvm"
-
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DLLVM_DIR=C:/Program Files/LLVM/lib/cmake/llvm"
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DLLVM_DIR=${{ env.LLVM_DIR }}"
 
       - name: Build
         run: cmake --build build --config Release
